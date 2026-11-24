@@ -1,0 +1,32 @@
+id = "time.monotonic"
+version = 1
+status = "stable"
+summary = "Monotone Uhr mit Nanosekunden-Werten"
+requires = []
+
+[platforms.macos]
+policy = "native"
+sources = ["backends/posix/time/monotonic.c"]
+note = "CLOCK_UPTIME_RAW, pausiert im Ruhezustand"
+
+[platforms.linux]
+policy = "native"
+sources = ["backends/posix/time/monotonic.c"]
+note = "CLOCK_MONOTONIC, pausiert im Ruhezustand"
+
+[platforms.windows]
+policy = "native"
+sources = ["backends/windows/time/monotonic.c"]
+note = "QueryPerformanceCounter; Verhalten im Ruhezustand noch nicht verifiziert"
+
+[platforms.xernel]
+policy = "reject"
+note = "Xernel-Backend folgt"
+
+[platforms.web]
+policy = "native"
+sources = ["backends/web/time/monotonic.c"]
+note = "performance.now(); der Browser vergröbert die Auflösung, NHAL misst sie beim Start"
+
+[platforms.console]
+policy = "external"

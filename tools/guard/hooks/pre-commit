@@ -1,0 +1,3 @@
+#!/bin/sh
+# Prüft das ganze Repo vor jedem Commit.
+exec python3 "$(git rev-parse --show-toplevel)/tools/guard/guard.py"

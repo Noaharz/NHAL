@@ -1,0 +1,24 @@
+id = "net.socket_udp"
+version = 1
+status = "draft"
+summary = "UDP-Sockets"
+requires = []
+
+[platforms.macos]
+policy = "native"
+
+[platforms.windows]
+policy = "native"
+
+[platforms.linux]
+policy = "native"
+
+[platforms.xernel]
+policy = "native"
+
+[platforms.web]
+policy = "reject"
+note = "Browser erlauben keine UDP-Sockets (WebTransport wäre ein eigenes Feature)"
+
+[platforms.console]
+policy = "external"

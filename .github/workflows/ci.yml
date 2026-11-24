@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Konfigurieren
+        run: cmake -S . -B build -DNHAL_WERROR=ON
+      - name: Bauen
+        run: cmake --build build --config Release
+      - name: Testen
+        run: ctest --test-dir build -C Release --output-on-failure
+      - name: Beispiel
+        run: |
+          cmake -S examples/minimal -B examples/minimal/build
+          cmake --build examples/minimal/build --config Release
+
+  xernel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Freestanding-Prüfbuild
+        run: ./nhal build --xernel --werror
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: mymindstorm/setup-emsdk@v14
+      - name: Bauen und testen (node)
+        run: ./nhal build --web --werror --test
+
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Bericht über alle Plattformen (time.monotonic fehlt auf Xernel noch, daher kein Abbruch)
+        run: ./nhal check --all --features time.monotonic --optional gfx.mesh_shader || true
+      - name: Beispiel-Manifest auf seinen Zielplattformen
+        run: ./nhal check --manifest examples/minimal/nhal.toml
+
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Dateien prüfen
+        run: python3 tools/guard/guard.py
+      - name: Commit-Nachrichten prüfen
+        run: |
+          for c in $(git rev-list HEAD); do
+            git log -1 --format=%B "$c" > msg.txt
+            python3 tools/guard/guard.py --text-file msg.txt || exit 1
+          done

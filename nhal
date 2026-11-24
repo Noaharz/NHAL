@@ -1,0 +1,3 @@
+#!/bin/sh
+# Einstieg: ./nhal list | check | build  [--all | --macos --xernel …] [--features …]
+exec python3 "$(dirname "$0")/tools/nhal.py" "$@"

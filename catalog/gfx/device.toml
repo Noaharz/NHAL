@@ -1,0 +1,23 @@
+id = "gfx.device"
+version = 1
+status = "draft"
+summary = "GPU-Gerät, Ressourcen, Pipelines, Befehlslisten"
+requires = []
+
+[platforms.macos]
+policy = "native"
+
+[platforms.windows]
+policy = "native"
+
+[platforms.linux]
+policy = "native"
+
+[platforms.xernel]
+policy = "native"
+
+[platforms.web]
+policy = "native"
+
+[platforms.console]
+policy = "external"

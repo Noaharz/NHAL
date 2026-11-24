@@ -1,0 +1,23 @@
+id = "fs.file"
+version = 1
+status = "draft"
+summary = "Synchrone Datei wie stdio (öffnen, lesen, schreiben, suchen)"
+requires = []
+
+[platforms.macos]
+policy = "native"
+
+[platforms.windows]
+policy = "native"
+
+[platforms.linux]
+policy = "native"
+
+[platforms.xernel]
+policy = "native"
+
+[platforms.web]
+policy = "native"
+
+[platforms.console]
+policy = "external"

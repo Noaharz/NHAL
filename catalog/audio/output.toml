@@ -1,0 +1,23 @@
+id = "audio.output"
+version = 1
+status = "draft"
+summary = "Standard-Audioausgabe"
+requires = []
+
+[platforms.macos]
+policy = "native"
+
+[platforms.windows]
+policy = "native"
+
+[platforms.linux]
+policy = "native"
+
+[platforms.xernel]
+policy = "native"
+
+[platforms.web]
+policy = "native"
+
+[platforms.console]
+policy = "external"

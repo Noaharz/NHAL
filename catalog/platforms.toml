@@ -1,0 +1,26 @@
+# Zielplattformen von NHAL. Der Schlüssel ist die Plattform-ID. Sie ist
+# zugleich das Flag des Werkzeugs (--macos, --xernel, …) und der Name der
+# Tabelle [platforms.<id>] in jedem Feature.
+
+[macos]
+name = "macOS (Apple Silicon)"
+
+[windows]
+name = "Windows"
+
+[linux]
+name = "Linux"
+
+[xernel]
+name = "Xernel"
+freestanding = true
+note = "Eigenständiges Betriebssystem. Bis Xernel eine libc mitbringt, baut NHAL dort freestanding, und der Kern braucht einen Allocator vom Aufrufer."
+
+[web]
+name = "Web (WebAssembly)"
+note = "Gebaut mit Emscripten. Im Browser gibt es keinen direkten Zugriff auf Dateisystem oder Sockets des Betriebssystems; fs.* läuft über das virtuelle Dateisystem bzw. HTTP."
+
+[console]
+name = "Konsolen"
+external = true
+note = "Konsolen-SDKs stehen unter NDA. Backends liegen in privaten Repos lizenzierter Entwickler; hier gibt es nur die Schnittstelle."

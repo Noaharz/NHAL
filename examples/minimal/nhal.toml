@@ -1,0 +1,8 @@
+# Manifest: Diese App nimmt aus dem Katalog nur, was sie wirklich braucht.
+
+[platforms]
+targets = ["macos", "linux", "windows", "web"]
+
+[features]
+required = ["time.monotonic"]
+optional = ["gfx.mesh_shader"]   # Entwurf: wird weggelassen, die App läuft trotzdem

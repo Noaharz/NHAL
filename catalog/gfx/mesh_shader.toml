@@ -1,0 +1,24 @@
+id = "gfx.mesh_shader"
+version = 1
+status = "draft"
+summary = "Mesh- und Task-Shader"
+requires = ["gfx.device"]
+
+[platforms.macos]
+policy = "native"
+
+[platforms.windows]
+policy = "native"
+
+[platforms.linux]
+policy = "native"
+
+[platforms.xernel]
+policy = "native"
+
+[platforms.web]
+policy = "reject"
+note = "WebGPU kennt keine Mesh-Shader"
+
+[platforms.console]
+policy = "external"

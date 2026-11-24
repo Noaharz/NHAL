@@ -1,0 +1,24 @@
+id = "thread.scheduler"
+version = 1
+status = "draft"
+summary = "Task-Scheduler mit Abhängigkeiten und Prioritäten"
+requires = ["time.monotonic"]
+
+[platforms.macos]
+policy = "native"
+
+[platforms.windows]
+policy = "native"
+
+[platforms.linux]
+policy = "native"
+
+[platforms.xernel]
+policy = "native"
+
+[platforms.web]
+policy = "emulated"
+note = "ohne SharedArrayBuffer laufen Tasks nacheinander auf dem Hauptthread"
+
+[platforms.console]
+policy = "external"
