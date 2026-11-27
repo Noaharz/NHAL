@@ -1,0 +1,30 @@
+id = "input.actions"
+version = 1
+status = "experimental"
+summary = "Aktionen mit Bindungen an Tasten, Maus und Gamepad, Standard-Belegung"
+requires = ["input.state"]
+
+[platforms.macos]
+policy = "native"
+sources = ["backends/common/input/actions.c"]
+
+[platforms.windows]
+policy = "native"
+sources = ["backends/common/input/actions.c"]
+
+[platforms.linux]
+policy = "native"
+sources = ["backends/common/input/actions.c"]
+
+[platforms.xernel]
+policy = "native"
+sources = ["backends/common/input/actions.c"]
+
+[platforms.web]
+policy = "native"
+sources = ["backends/common/input/actions.c"]
+
+[platforms.console]
+policy = "native"
+sources = ["backends/common/input/actions.c"]
+note = "plattformunabhängig, läuft überall mit"

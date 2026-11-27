@@ -1,0 +1,30 @@
+id = "input.state"
+version = 1
+status = "experimental"
+summary = "Zustand von Tastatur, Maus und Touch mit Flanken (pressed/released je Frame)"
+requires = []
+
+[platforms.macos]
+policy = "native"
+sources = ["backends/common/input/state.c"]
+
+[platforms.windows]
+policy = "native"
+sources = ["backends/common/input/state.c"]
+
+[platforms.linux]
+policy = "native"
+sources = ["backends/common/input/state.c"]
+
+[platforms.xernel]
+policy = "native"
+sources = ["backends/common/input/state.c"]
+
+[platforms.web]
+policy = "native"
+sources = ["backends/common/input/state.c"]
+
+[platforms.console]
+policy = "native"
+sources = ["backends/common/input/state.c"]
+note = "plattformunabhängig, läuft überall mit"

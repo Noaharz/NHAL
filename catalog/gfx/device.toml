@@ -1,23 +1,32 @@
 id = "gfx.device"
-version = 1
-status = "draft"
-summary = "GPU-Gerät, Ressourcen, Pipelines, Befehlslisten"
+version = 2
+status = "experimental"
+summary = "GPU-Gerät, Ressourcen, Pipelines, Befehlslisten, Oberflächen"
 requires = []
 
 [platforms.macos]
 policy = "native"
+sources = ["backends/macos/gfx/device.m"]
+link = ["-Wl,-framework,Metal", "-Wl,-framework,QuartzCore", "-Wl,-framework,AppKit", "-Wl,-framework,Foundation"]
+note = "Metal; Shader in MSL; Unified Memory, HOST_VISIBLE-Puffer dauerhaft gemappt; wait() blockiert (MTLSharedEvent)"
 
 [platforms.windows]
-policy = "native"
+policy = "planned"
+note = "D3D12-Backend folgt"
 
 [platforms.linux]
-policy = "native"
+policy = "planned"
+note = "Vulkan-Backend folgt"
 
 [platforms.xernel]
-policy = "native"
+policy = "planned"
+note = "braucht einen GPU-Treiber in Xernel"
 
 [platforms.web]
 policy = "native"
+sources = ["backends/web/gfx/device.c"]
+js_libraries = ["backends/web/gfx/device.js"]
+note = "WebGPU; Shader in WGSL; Gerät kommt asynchron (ready()), kein dauerhaftes Mapping, wait() blockiert nicht, Push-Konstanten über Uniform-Ring"
 
 [platforms.console]
 policy = "external"

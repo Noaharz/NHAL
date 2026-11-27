@@ -38,6 +38,17 @@ class NhalCliTest(unittest.TestCase):
         self.assertIn("FEHLT", r.stdout)
         self.assertIn("extern", r.stdout)   # console
 
+    def test_xernel_memory_features(self):
+        r = run("check", "--xernel", "--features", "mem.pool,mem.frame")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("nativ", r.stdout)
+
+    def test_xernel_reports_reasons(self):
+        r = run("check", "--xernel", "--features", "fs.file,thread.scheduler")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("VFS", r.stdout)
+        self.assertIn("Threads", r.stdout)
+
     def test_optional_is_not_fatal(self):
         r = run("check", "--xernel", "--optional", "time.monotonic")
         self.assertEqual(r.returncode, 0, r.stderr)

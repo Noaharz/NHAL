@@ -1,6 +1,16 @@
 # Zielplattformen von NHAL. Der Schlüssel ist die Plattform-ID. Sie ist
 # zugleich das Flag des Werkzeugs (--macos, --xernel, …) und der Name der
 # Tabelle [platforms.<id>] in jedem Feature.
+#
+# Felder:
+#   name          Anzeigename
+#   freestanding  ohne libc bauen (-ffreestanding)
+#   allocator     Quellen des Standard-Allocators (ohne Angabe: libc-Allocator,
+#                 bei freestanding keiner – dann muss der Aufrufer einen mitgeben)
+#   toolchain     CMake-Toolchain-Datei für den Cross-Build
+#   wrapper       Programm, das cmake umhüllt (z. B. emcmake)
+#   external      Backends liegen außerhalb dieses Repos
+#   note          Hinweis für die Plattform-Matrix
 
 [macos]
 name = "macOS (Apple Silicon)"
@@ -13,11 +23,13 @@ name = "Linux"
 
 [xernel]
 name = "Xernel"
-freestanding = true
-note = "Eigenständiges Betriebssystem. Bis Xernel eine libc mitbringt, baut NHAL dort freestanding, und der Kern braucht einen Allocator vom Aufrufer."
+allocator = ["backends/xernel/allocator.c"]
+toolchain = "cmake/toolchains/xernel-x86_64.cmake"
+note = "Eigenständiges Betriebssystem (Mikrokernel, x86_64) mit eigener C-Bibliothek xlibc. Gebaut wird gegen den Xernel-Workspace in XERNEL_ROOT."
 
 [web]
 name = "Web (WebAssembly)"
+wrapper = "emcmake"
 note = "Gebaut mit Emscripten. Im Browser gibt es keinen direkten Zugriff auf Dateisystem oder Sockets des Betriebssystems; fs.* läuft über das virtuelle Dateisystem bzw. HTTP."
 
 [console]

@@ -1,23 +1,28 @@
 id = "mem.pool"
 version = 1
-status = "draft"
+status = "experimental"
 summary = "Pool-Allocator für Objekte fester Größe"
 requires = []
 
 [platforms.macos]
 policy = "native"
+sources = ["backends/common/mem/pool.c"]
 
 [platforms.windows]
 policy = "native"
+sources = ["backends/common/mem/pool.c"]
 
 [platforms.linux]
 policy = "native"
+sources = ["backends/common/mem/pool.c"]
 
 [platforms.xernel]
 policy = "native"
+sources = ["backends/common/mem/pool.c"]
 
 [platforms.web]
 policy = "native"
+sources = ["backends/common/mem/pool.c"]
 
 [platforms.console]
 policy = "external"

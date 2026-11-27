@@ -1,23 +1,28 @@
 id = "mem.frame"
 version = 1
-status = "draft"
-summary = "Linearer Frame-Allocator, pro Frame zurückgesetzt"
+status = "experimental"
+summary = "Linearer Frame-Allocator mit Marken und Reset"
 requires = []
 
 [platforms.macos]
 policy = "native"
+sources = ["backends/common/mem/frame.c"]
 
 [platforms.windows]
 policy = "native"
+sources = ["backends/common/mem/frame.c"]
 
 [platforms.linux]
 policy = "native"
+sources = ["backends/common/mem/frame.c"]
 
 [platforms.xernel]
 policy = "native"
+sources = ["backends/common/mem/frame.c"]
 
 [platforms.web]
 policy = "native"
+sources = ["backends/common/mem/frame.c"]
 
 [platforms.console]
 policy = "external"

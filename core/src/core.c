@@ -4,7 +4,7 @@
  */
 #include "nhal/nhal_backend.h"
 
-#ifndef NHAL_PLATFORM_FREESTANDING
+#if NHAL_HAS_DEFAULT_ALLOCATOR
 extern const nhal_allocator nhal_default_allocator;
 #endif
 
@@ -107,11 +107,11 @@ nhal_status nhal_init(const nhal_init_info* info, nhal_context** out) {
     if (info && info->allocator) {
         allocator = *info->allocator;
     } else {
-#ifdef NHAL_PLATFORM_FREESTANDING
-        return make_status(NHAL_ERR_INVALID_ARGUMENT, NHAL_FEATURE_NONE,
-                           "Freestanding-Build: nhal_init_info.allocator ist Pflicht");
-#else
+#if NHAL_HAS_DEFAULT_ALLOCATOR
         allocator = nhal_default_allocator;
+#else
+        return make_status(NHAL_ERR_INVALID_ARGUMENT, NHAL_FEATURE_NONE,
+                           "Plattform ohne Standard-Allocator: nhal_init_info.allocator ist Pflicht");
 #endif
     }
     if (!allocator.alloc || !allocator.free) {

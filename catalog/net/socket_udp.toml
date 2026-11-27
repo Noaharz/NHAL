@@ -1,20 +1,24 @@
 id = "net.socket_udp"
 version = 1
-status = "draft"
-summary = "UDP-Sockets"
+status = "experimental"
+summary = "UDP-Sockets, nicht blockierend"
 requires = []
 
 [platforms.macos]
 policy = "native"
+sources = ["backends/posix/net/socket_udp.c"]
 
 [platforms.windows]
-policy = "native"
+policy = "planned"
+note = "Winsock-Backend folgt"
 
 [platforms.linux]
 policy = "native"
+sources = ["backends/posix/net/socket_udp.c"]
 
 [platforms.xernel]
-policy = "native"
+policy = "planned"
+note = "braucht Sockets in xlibc (Netzstack-Server von Xernel)"
 
 [platforms.web]
 policy = "reject"

@@ -1,23 +1,30 @@
 id = "fs.file"
 version = 1
-status = "draft"
-summary = "Synchrone Datei wie stdio (öffnen, lesen, schreiben, suchen)"
+status = "experimental"
+summary = "Dateien und Ordner, synchron (öffnen, lesen, schreiben, suchen, auflisten)"
 requires = []
 
 [platforms.macos]
 policy = "native"
+sources = ["backends/posix/fs/file.c"]
 
 [platforms.windows]
 policy = "native"
+sources = ["backends/windows/fs/file.c"]
+note = "Win32 mit UTF-16-Pfaden"
 
 [platforms.linux]
 policy = "native"
+sources = ["backends/posix/fs/file.c"]
 
 [platforms.xernel]
-policy = "native"
+policy = "reject"
+note = "Der VFS-Server von Xernel ist noch ein Platzhalter"
 
 [platforms.web]
 policy = "native"
+sources = ["backends/posix/fs/file.c"]
+note = "virtuelles Dateisystem von Emscripten im Speicher, nicht die Platte des Rechners"
 
 [platforms.console]
 policy = "external"

@@ -22,20 +22,42 @@ jobs:
         run: cmake --build build --config Release
       - name: Testen
         run: ctest --test-dir build -C Release --output-on-failure
-      - name: Beispiel
+      - name: Beispiele
         run: |
           cmake -S examples/minimal -B examples/minimal/build
           cmake --build examples/minimal/build --config Release
+          cmake -S examples/files_minimal -B examples/files_minimal/build
+          cmake --build examples/files_minimal/build --config Release
+      - name: Beispiel game_input (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cmake -S examples/game_input -B examples/game_input/build
+          cmake --build examples/game_input/build --config Release
 
+  # Braucht den Xernel-Workspace: Repo-Variable XERNEL_REPO (Git-URL) setzen.
+  # Ohne sie wird der Job übersprungen und als übersprungen angezeigt.
   xernel:
+    if: vars.XERNEL_REPO != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Freestanding-Prüfbuild
-        run: ./nhal build --xernel --werror
+      - name: Werkzeuge
+        run: sudo apt-get update && sudo apt-get install -y clang llvm qemu-system-x86 xorriso
+      - name: Xernel holen
+        run: git clone --depth 1 "${{ vars.XERNEL_REPO }}" xernel-src
+      - name: xlibc bauen
+        working-directory: xernel-src/Xernel
+        run: |
+          cargo build -p xlibc --target targets/x86_64-xernel-user.json -Z json-target-spec \
+            -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
+          cargo xtask fetch-limine
+      - name: Bauen und in QEMU testen
+        env:
+          XERNEL_ROOT: ${{ github.workspace }}/xernel-src/Xernel
+        run: ./nhal build --xernel --werror --test
 
   web:
     runs-on: ubuntu-latest
@@ -45,8 +67,8 @@ jobs:
         with:
           python-version: "3.12"
       - uses: mymindstorm/setup-emsdk@v14
-      - name: Bauen und testen (node)
-        run: ./nhal build --web --werror --test
+      - name: Bauen und testen (node und headless Chrome)
+        run: ./nhal build --web --werror --test --browser
 
   check:
     runs-on: ubuntu-latest

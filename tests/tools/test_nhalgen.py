@@ -28,6 +28,7 @@ class TempCatalog:
         self.dir = tempfile.TemporaryDirectory()
         self.root = Path(self.dir.name)
         self.write("catalog/platforms.toml", PLATFORMS)
+        self.write("core/src/default_allocator.c", "/* leer */\n")
 
     def write(self, rel, text):
         path = self.root / rel
@@ -138,6 +139,39 @@ class NhalgenTest(unittest.TestCase):
         self.assertIn("deps_b_top[] = { 0u }", registry)
         self.assertIn("NHAL_REQUIRED", registry)
         self.assertIn("backends/desk/a_base.c", sources)
+
+    def _js_feature(self, pid):
+        self.cat.write("catalog/platforms.toml", PLATFORMS + '\n[web]\nname = "Web"\n')
+        self.cat.write("backends/x/a.c", "/* leer */\n")
+        self.cat.write("backends/x/a.js", "// leer\n")
+        self.cat.write("include/nhal/features/a/js.h", "/* leer */\n")
+        self.cat.write("catalog/a/js.toml", f"""
+            id = "a.js"
+            version = 1
+            status = "stable"
+            summary = "Test"
+            requires = []
+
+            [platforms.{pid}]
+            policy = "native"
+            sources = ["backends/x/a.c"]
+            js_libraries = ["backends/x/a.js"]
+            """)
+
+    def test_js_libraries_reach_cmake(self):
+        self._js_feature("web")
+        cat = self.cat.load()
+        sel = nhalgen.resolve(cat, "web", ["a.js"], [])
+        out = self.cat.root / "out"
+        nhalgen.generate(cat, sel, out)
+        sources = (out / "nhal_sources.cmake").read_text(encoding="utf-8")
+        self.assertIn('set(NHAL_FEATURE_JS_LIBRARIES "${NHAL_ROOT}/backends/x/a.js")', sources)
+
+    def test_js_libraries_only_for_web(self):
+        self._js_feature("desk")
+        with self.assertRaises(nhalgen.CatalogError) as ctx:
+            self.cat.load()
+        self.assertTrue(any("js_libraries" in e for e in ctx.exception.errors))
 
     def test_empty_selection_still_compiles(self):
         self.cat.feature("a.base")

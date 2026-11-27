@@ -58,6 +58,14 @@ include("${NHAL_GEN_DIR}/nhal_sources.cmake")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     ${NHAL_CATALOG_FILES} "${NHAL_ROOT}/tools/nhalgen/nhalgen.py")
 
+# Backends in Objective-C (.m, macOS-Frameworks) – nur wenn gewählt, mit ARC.
+set(_nhal_objc_sources ${NHAL_FEATURE_SOURCES})
+list(FILTER _nhal_objc_sources INCLUDE REGEX "\\.m$")
+if(_nhal_objc_sources)
+    enable_language(OBJC)
+    set_source_files_properties(${_nhal_objc_sources} PROPERTIES COMPILE_OPTIONS "-fobjc-arc")
+endif()
+
 # ── Bibliothek ───────────────────────────────────────────────────────────────
 add_library(nhal STATIC
     core/src/core.c
@@ -66,16 +74,29 @@ add_library(nhal STATIC
 )
 add_library(nhal::nhal ALIAS nhal)
 
-if(NOT NHAL_PLATFORM_FREESTANDING)
-    target_sources(nhal PRIVATE core/src/default_allocator.c)
-endif()
+target_sources(nhal PRIVATE ${NHAL_ALLOCATOR_SOURCES})
 
 target_include_directories(nhal PUBLIC
     "$<BUILD_INTERFACE:${NHAL_ROOT}/include>"
     "$<BUILD_INTERFACE:${NHAL_GEN_DIR}/include>"
 )
+# Interne Hilfen der Backends (Threads, Heap) – nicht Teil der öffentlichen API.
+target_include_directories(nhal PRIVATE "${NHAL_ROOT}/backends")
+
+# pthreads für Features mit Worker-Threads (Windows nutzt Win32-Threads,
+# Web und Xernel haben keine).
+if(NHAL_PLATFORM STREQUAL "macos" OR NHAL_PLATFORM STREQUAL "linux")
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    find_package(Threads REQUIRED)
+    target_link_libraries(nhal PUBLIC Threads::Threads)
+endif()
 set_target_properties(nhal PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
 target_link_libraries(nhal PUBLIC ${NHAL_FEATURE_LINK_LIBS})
+# JS-Bibliotheken der Web-Backends (größerer JS-Code als in EM_JS sinnvoll).
+foreach(_nhal_js IN LISTS NHAL_FEATURE_JS_LIBRARIES)
+    target_link_options(nhal INTERFACE "--js-library=${_nhal_js}")
+    set_property(TARGET nhal APPEND PROPERTY INTERFACE_LINK_DEPENDS "${_nhal_js}")
+endforeach()
 
 if(MSVC)
     target_compile_options(nhal PRIVATE /W4 $<$<BOOL:${NHAL_WERROR}>:/WX>)

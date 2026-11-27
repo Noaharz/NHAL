@@ -1,0 +1,9 @@
+# Ein Werkzeug ohne Fenster: Dateien, asynchrones Lesen, Tasks, Speicher.
+# Grafik, Audio und Eingabe sind nicht dabei und werden nicht gebaut.
+
+[platforms]
+targets = ["macos", "linux", "windows"]
+
+[features]
+required = ["fs.file", "fs.async_read", "thread.scheduler", "mem.frame"]
+optional = ["time.monotonic"]

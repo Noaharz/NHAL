@@ -1,0 +1,32 @@
+id = "window.basic"
+version = 1
+status = "experimental"
+summary = "Fenster und Ereignisse: Tastatur, Maus, Text/IME, Drops, Touch, Stift, Fokus, Größe"
+requires = []
+
+[platforms.macos]
+policy = "native"
+sources = ["backends/macos/window/basic.m"]
+link = ["-Wl,-framework,AppKit", "-Wl,-framework,Foundation"]
+note = "Cocoa (NSWindow/NSView, NSTextInputClient); nur im Hauptthread; kein Touch (Trackpad = Maus)"
+
+[platforms.windows]
+policy = "planned"
+note = "Win32-Backend folgt"
+
+[platforms.linux]
+policy = "planned"
+note = "Wayland-Backend (mit X11 als Rückfall) folgt"
+
+[platforms.xernel]
+policy = "planned"
+note = "braucht einen Fenster-Server in Xernel"
+
+[platforms.web]
+policy = "native"
+sources = ["backends/web/window/basic.c"]
+js_libraries = ["backends/web/window/basic.js"]
+note = "Canvas und DOM-Ereignisse (Pointer Events, IME über ein verstecktes Textfeld); kein QUIT, wait_events blockiert nicht"
+
+[platforms.console]
+policy = "external"

@@ -1,0 +1,31 @@
+id = "sys.shell"
+version = 1
+status = "experimental"
+summary = "Programm-, Ressourcen- und Nutzerdaten-Ordner; URLs und Dateien im System öffnen"
+requires = []
+
+[platforms.macos]
+policy = "native"
+sources = ["backends/macos/sys/shell.m"]
+link = ["-Wl,-framework,AppKit", "-Wl,-framework,Foundation"]
+note = "NSBundle, Application Support, NSWorkspace"
+
+[platforms.windows]
+policy = "planned"
+note = "ShellExecuteW und Known Folders folgen"
+
+[platforms.linux]
+policy = "planned"
+note = "xdg-open und XDG-Verzeichnisse folgen"
+
+[platforms.xernel]
+policy = "planned"
+note = "braucht Dateien und Prozessstart in Xernel"
+
+[platforms.web]
+policy = "native"
+sources = ["backends/web/sys/shell.c"]
+note = "Ordner im virtuellen FS (flüchtig); open() nur für URLs, neuer Tab"
+
+[platforms.console]
+policy = "external"

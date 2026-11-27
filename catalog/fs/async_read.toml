@@ -1,23 +1,32 @@
 id = "fs.async_read"
 version = 1
-status = "draft"
-summary = "Asynchrones Lesen von Dateibereichen"
-requires = ["fs.file"]
+status = "experimental"
+summary = "Dateibereiche asynchron lesen, Abholen per poll()"
+requires = []
 
 [platforms.macos]
 policy = "native"
+sources = ["backends/common/fs/async_read.c", "backends/posix/fs/read_range.c"]
+note = "zwei Lese-Threads, pread"
 
 [platforms.windows]
 policy = "native"
+sources = ["backends/common/fs/async_read.c", "backends/windows/fs/read_range.c"]
+note = "zwei Lese-Threads, ReadFile mit Offset"
 
 [platforms.linux]
 policy = "native"
+sources = ["backends/common/fs/async_read.c", "backends/posix/fs/read_range.c"]
+note = "zwei Lese-Threads, pread"
 
 [platforms.xernel]
-policy = "native"
+policy = "reject"
+note = "Der VFS-Server von Xernel ist noch ein Platzhalter"
 
 [platforms.web]
-policy = "native"
+policy = "emulated"
+sources = ["backends/common/fs/async_read.c", "backends/posix/fs/read_range.c"]
+note = "ohne pthreads wird erst in poll() gelesen, synchron aus dem virtuellen Dateisystem"
 
 [platforms.console]
 policy = "external"

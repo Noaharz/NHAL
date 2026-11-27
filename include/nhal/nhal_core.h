@@ -9,7 +9,7 @@
  *   - den Zugriff auf die Funktionstabellen der Features.
  *
  * Reines C11, nutzt nur freestanding-Header (stddef, stdint, stdbool) und
- * läuft damit auch ohne libc (z. B. auf Xernel, solange es dort keine gibt).
+ * läuft damit auch ohne libc.
  *
  * Grundsatz: Kann ein Backend etwas nicht, antwortet NHAL mit einem Fehler
  * und nennt den Grund. Es gibt keinen stillen Ersatz.

@@ -11,9 +11,10 @@ summary = "Monotone Uhr mit Nanosekunden-Werten"
 requires = []                  # andere Feature-IDs
 
 [platforms.macos]
-policy = "native"              # native | emulated | reject | external
+policy = "native"              # native | emulated | planned | reject | external
 sources = ["backends/posix/time/monotonic.c"]
 link = []                      # Bibliotheken/Frameworks, z. B. ["-framework Metal"]
+js_libraries = []              # nur web: JS-Bibliotheken (--js-library), Pfade wie sources
 note = "CLOCK_UPTIME_RAW, pausiert im Ruhezustand"
 
 [platforms.xernel]
@@ -28,7 +29,9 @@ note = "Xernel-Backend folgt"
 - Alle `requires` existieren, und es gibt keine Zyklen.
 - Ein nicht-Entwurf hängt nicht von einem Entwurf ab.
 - `native`/`emulated` haben `sources` (außer bei Entwürfen), und die Dateien existieren.
-- `reject`/`external` haben keine `sources`/`link`.
+- `planned`/`reject`/`external` haben keine `sources`/`link`/`js_libraries`.
+- `js_libraries` gibt es nur für `web`. Dorthin gehört JS-Code, der für `EM_JS` zu
+  groß ist (C-Compiler begrenzen String-Literale, `-Wpedantic` auf 4095 Zeichen).
 - Ein nicht-Entwurf hat seinen Header `include/nhal/features/<gruppe>/<name>.h`.
 - Plattformen sind in `catalog/platforms.toml` bekannt.
 - Die Hashes der IDs kollidieren nicht und sind nicht 0.
@@ -66,8 +69,14 @@ optional = ["gfx.mesh_shader"]
 ```toml
 [xernel]
 name = "Xernel"
-freestanding = true   # ohne libc bauen, Allocator vom Aufrufer
+freestanding = true                                  # ohne libc bauen
+allocator = ["backends/xernel/allocator.c", "…"]     # Standard-Allocator der Plattform
+toolchain = "cmake/toolchains/xernel-x86_64.cmake"   # Cross-Build
 note = "…"
+
+[web]
+name = "Web (WebAssembly)"
+wrapper = "emcmake"                                  # Programm, das cmake umhüllt
 
 [console]
 name = "Konsolen"

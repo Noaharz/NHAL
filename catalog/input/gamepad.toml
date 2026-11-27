@@ -1,23 +1,31 @@
 id = "input.gamepad"
 version = 1
-status = "draft"
-summary = "Gamepads: Achsen, Tasten, Ereignisse"
+status = "experimental"
+summary = "Gamepads mit einheitlicher Belegung, Zustand per poll()"
 requires = []
 
 [platforms.macos]
 policy = "native"
+sources = ["backends/macos/input/gamepad.m"]
+link = ["-Wl,-framework,GameController", "-Wl,-framework,Foundation", "-Wl,-framework,CoreFoundation"]
+note = "GameController-Framework; auch ohne Fokus"
 
 [platforms.windows]
-policy = "native"
+policy = "planned"
+note = "XInput/GameInput-Backend folgt"
 
 [platforms.linux]
-policy = "native"
+policy = "planned"
+note = "evdev-Backend folgt"
 
 [platforms.xernel]
-policy = "native"
+policy = "planned"
+note = "braucht einen HID-Treiber in Xernel"
 
 [platforms.web]
 policy = "native"
+sources = ["backends/web/input/gamepad.c"]
+note = "Gamepad API; Browser melden ein Pad erst nach dem ersten Tastendruck darauf"
 
 [platforms.console]
 policy = "external"

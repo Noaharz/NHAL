@@ -1,24 +1,32 @@
 id = "thread.scheduler"
 version = 1
-status = "draft"
+status = "experimental"
 summary = "Task-Scheduler mit Abhängigkeiten und Prioritäten"
-requires = ["time.monotonic"]
+requires = []
 
 [platforms.macos]
 policy = "native"
+sources = ["backends/common/thread/scheduler.c"]
+note = "Worker-Threads: Kerne - 1"
 
 [platforms.windows]
 policy = "native"
+sources = ["backends/common/thread/scheduler.c"]
+note = "Worker-Threads: Kerne - 1"
 
 [platforms.linux]
 policy = "native"
+sources = ["backends/common/thread/scheduler.c"]
+note = "Worker-Threads: Kerne - 1"
 
 [platforms.xernel]
-policy = "native"
+policy = "reject"
+note = "Xernel hat noch keine Threads, nur Prozesse"
 
 [platforms.web]
 policy = "emulated"
-note = "ohne SharedArrayBuffer laufen Tasks nacheinander auf dem Hauptthread"
+sources = ["backends/common/thread/scheduler.c"]
+note = "ohne pthreads laufen Aufgaben sofort im aufrufenden Thread"
 
 [platforms.console]
 policy = "external"

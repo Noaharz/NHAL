@@ -26,6 +26,7 @@ Beispiele:
 from __future__ import annotations
 
 import argparse
+import os
 import platform as host_platform
 import shutil
 import subprocess
@@ -85,6 +86,8 @@ def build_parser(cat: nhalgen.Catalog) -> argparse.ArgumentParser:
     b.add_argument("--toolchain", action="append", default=[], metavar="PLATTFORM=DATEI",
                    help="CMake-Toolchain-Datei für eine Plattform (Cross-Build)")
     b.add_argument("--test", action="store_true", help="nach dem Bauen ctest ausführen (wo möglich)")
+    b.add_argument("--browser", action="store_true",
+                   help="mit --test: Web-Tests zusätzlich in headless Chrome (WebGPU, Web Audio, Gamepad)")
     b.add_argument("--skip-unavailable", action="store_true",
                    help="nicht baubare Plattformen nur melden statt als Fehler zu werten")
     b.add_argument("--werror", action="store_true", help="Warnungen als Fehler")
@@ -171,22 +174,24 @@ def write_manifest(path: Path, m: nhalgen.Manifest) -> None:
 
 def configure_command(pid: str, cat: nhalgen.Catalog, toolchains: dict[str, Path],
                       source: Path, build: Path, defines: list[str]) -> tuple[list[str] | None, str]:
-    """Liefert (Befehl, '') oder (None, Grund), warum hier nicht gebaut werden kann."""
+    """Liefert (Befehl, '') oder (None, Grund), warum hier nicht gebaut werden kann.
+
+    Reihenfolge: --toolchain der Kommandozeile, dann toolchain/wrapper aus
+    catalog/platforms.toml, dann der Host selbst.
+    """
     plat = cat.platforms[pid]
     base = ["cmake", "-S", str(source), "-B", str(build), f"-DNHAL_PLATFORM={pid}"] + defines
     if plat.external:
         return None, "Backends liegen außerhalb dieses Repos"
     if pid in toolchains:
         return base + [f"-DCMAKE_TOOLCHAIN_FILE={toolchains[pid]}"], ""
+    if plat.toolchain:
+        return base + [f"-DCMAKE_TOOLCHAIN_FILE={ROOT / plat.toolchain}"], ""
+    if plat.wrapper:
+        if shutil.which(plat.wrapper):
+            return [plat.wrapper] + base, ""
+        return None, f"{plat.wrapper} fehlt im PATH (für {plat.name} nötig)"
     if pid == host_platform_id():
-        return base, ""
-    if pid == "web":
-        if shutil.which("emcmake"):
-            return ["emcmake"] + base, ""
-        return None, "Emscripten fehlt (emcmake nicht im PATH; emsdk installieren und aktivieren)"
-    if plat.freestanding:
-        # Ohne Xernel-Toolchain: Freestanding-Übersetzung mit dem Host-Compiler
-        # (prüft, dass alles ohne libc baut; erzeugt keine Xernel-Binärdatei).
         return base, ""
     return None, f"Cross-Build braucht eine Toolchain: --toolchain {pid}=DATEI"
 
@@ -225,10 +230,24 @@ def cmd_build(cat: nhalgen.Catalog, args) -> int:
 
         steps = [cmd, ["cmake", "--build", str(build), "--config", "Release"]]
         runs_here = pid == host_platform_id() or (pid == "web" and shutil.which("node") is not None)
+        on_target = pid == "xernel" and bool(os.environ.get("XERNEL_ROOT")) and shutil.which("qemu-system-x86_64")
         if args.test and runs_here:
             steps.append(["ctest", "--test-dir", str(build), "-C", "Release", "--output-on-failure"])
+        elif args.test and on_target:
+            # Erst Python-Tests auf dem Host, dann die C-Tests in QEMU auf Xernel.
+            steps.append(["ctest", "--test-dir", str(build), "-C", "Release", "--output-on-failure"])
+            steps.append(["@xernel-qemu", str(build / "nhal_target_tests.txt")])
+            runs_here = True
+        if args.test and args.browser and pid == "web":
+            steps.append(["@browser", str(build)])
         ok = True
         for step in steps:
+            if step[0] == "@browser":
+                names = (Path(step[1]) / "nhal_browser_tests.txt").read_text(encoding="utf-8").split()
+                step = ["node", str(ROOT / "tools" / "web_browser_test.mjs"), str(Path(step[1]) / "tests"), *names]
+            if step[0] == "@xernel-qemu":
+                programs = Path(step[1]).read_text(encoding="utf-8").split()
+                step = [sys.executable, str(ROOT / "tools" / "xernel_qemu.py"), *programs]
             print("  $ " + " ".join(step), flush=True)
             if subprocess.run(step, cwd=ROOT).returncode != 0:
                 ok = False
@@ -236,8 +255,6 @@ def cmd_build(cat: nhalgen.Catalog, args) -> int:
         text = str(build) if ok else "Build fehlgeschlagen"
         if ok and args.test and not runs_here:
             text += " (Tests laufen nur auf der Zielplattform)"
-        if ok and cat.platforms[pid].freestanding and pid not in toolchains:
-            text += " (Freestanding-Prüfbuild mit Host-Compiler)"
         results.append((pid, "ok" if ok else "failed", text))
 
     print("\n━━ Ergebnis ━━")

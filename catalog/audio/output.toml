@@ -1,23 +1,31 @@
 id = "audio.output"
 version = 1
-status = "draft"
-summary = "Standard-Audioausgabe"
+status = "experimental"
+summary = "Ausgabe auf das Standard-Audiogerät (Float-Samples per Render-Funktion)"
 requires = []
 
 [platforms.macos]
 policy = "native"
+sources = ["backends/macos/audio/output.c"]
+link = ["-Wl,-framework,AudioToolbox", "-Wl,-framework,CoreAudio"]
+note = "CoreAudio (Default-Output-Unit), render() auf dem Echtzeit-Thread"
 
 [platforms.windows]
-policy = "native"
+policy = "planned"
+note = "WASAPI-Backend folgt"
 
 [platforms.linux]
-policy = "native"
+policy = "planned"
+note = "PipeWire/ALSA-Backend folgt"
 
 [platforms.xernel]
-policy = "native"
+policy = "planned"
+note = "braucht einen Audio-Treiber in Xernel"
 
 [platforms.web]
 policy = "native"
+sources = ["backends/web/audio/output.c"]
+note = "Web Audio (ScriptProcessorNode), render() im Hauptthread; startet erst nach einer Nutzeraktion"
 
 [platforms.console]
 policy = "external"

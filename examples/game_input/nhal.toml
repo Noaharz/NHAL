@@ -1,0 +1,9 @@
+# Fenster, Grafik und Eingabe: was ein kleines Spiel braucht.
+# Dateien, Netzwerk und Audio sind nicht dabei und werden nicht gebaut.
+
+[platforms]
+targets = ["macos", "web"]
+
+[features]
+required = ["window.basic", "gfx.device", "input.state", "input.actions"]
+optional = ["input.gamepad"]

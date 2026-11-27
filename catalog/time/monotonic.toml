@@ -21,7 +21,7 @@ note = "QueryPerformanceCounter; Verhalten im Ruhezustand noch nicht verifiziert
 
 [platforms.xernel]
 policy = "reject"
-note = "Xernel-Backend folgt"
+note = "Der Xernel-Timer ist nicht kalibriert: SYS_GET_TICKS zählt Ticks unbekannter Dauer"
 
 [platforms.web]
 policy = "native"

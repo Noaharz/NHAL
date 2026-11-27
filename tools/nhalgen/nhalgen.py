@@ -22,7 +22,7 @@ import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
-POLICIES = ("native", "emulated", "reject", "external")
+POLICIES = ("native", "emulated", "planned", "reject", "external")
 STATUSES = ("stable", "experimental", "draft")
 ID_RE = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$")
 PLATFORM_RE = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -30,6 +30,7 @@ PLATFORM_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 POLICY_LABEL = {
     "native": "nativ",
     "emulated": "emuliert",
+    "planned": "geplant",
     "reject": "abgelehnt",
     "external": "extern",
 }
@@ -57,6 +58,7 @@ class Support:
     policy: str
     sources: list[str] = field(default_factory=list)
     link: list[str] = field(default_factory=list)
+    js_libraries: list[str] = field(default_factory=list)  # nur Web: --js-library
     note: str = ""
 
 
@@ -66,6 +68,9 @@ class Platform:
     name: str
     freestanding: bool = False
     external: bool = False   # Backends liegen außerhalb dieses Repos (z. B. Konsolen)
+    allocator: list[str] = field(default_factory=list)   # Quellen des Standard-Allocators
+    toolchain: str = ""      # CMake-Toolchain-Datei (relativ zur Wurzel)
+    wrapper: str = ""        # z. B. "emcmake"
     note: str = ""
 
 
@@ -130,11 +135,25 @@ def load_catalog(root: Path) -> Catalog:
             if not PLATFORM_RE.match(pid) or not isinstance(data, dict):
                 errors.append(f"platforms.toml: ungültige Plattform '{pid}'")
                 continue
+            freestanding = bool(data.get("freestanding", False))
+            allocator = _str_list(data.get("allocator"), f"platforms.toml [{pid}] allocator", errors)
+            external = bool(data.get("external", False))
+            if not allocator and not freestanding and not external:
+                allocator = ["core/src/default_allocator.c"]
+            for src in allocator:
+                if not (root / src).is_file():
+                    errors.append(f"platforms.toml [{pid}]: Allocator-Quelle {src} fehlt")
+            toolchain = str(data.get("toolchain", ""))
+            if toolchain and not (root / toolchain).is_file():
+                errors.append(f"platforms.toml [{pid}]: Toolchain {toolchain} fehlt")
             platforms[pid] = Platform(
                 id=pid,
                 name=str(data.get("name", pid)),
-                freestanding=bool(data.get("freestanding", False)),
-                external=bool(data.get("external", False)),
+                freestanding=freestanding,
+                external=external,
+                allocator=allocator,
+                toolchain=toolchain,
+                wrapper=str(data.get("wrapper", "")),
                 note=str(data.get("note", "")),
             )
 
@@ -190,14 +209,17 @@ def load_catalog(root: Path) -> Catalog:
                 policy=policy,
                 sources=_str_list(sdata.get("sources"), where + " sources", errors),
                 link=_str_list(sdata.get("link"), where + " link", errors),
+                js_libraries=_str_list(sdata.get("js_libraries"), where + " js_libraries", errors),
                 note=str(sdata.get("note", "")),
             )
             implemented = policy in ("native", "emulated")
             if status != "draft" and implemented and not sup.sources:
                 errors.append(f"{where}: '{policy}' braucht 'sources'")
-            if not implemented and (sup.sources or sup.link):
-                errors.append(f"{where}: '{policy}' darf keine 'sources'/'link' haben")
-            for src in sup.sources:
+            if not implemented and (sup.sources or sup.link or sup.js_libraries):
+                errors.append(f"{where}: '{policy}' darf keine 'sources'/'link'/'js_libraries' haben")
+            if sup.js_libraries and pid != "web":
+                errors.append(f"{where}: 'js_libraries' gibt es nur für web")
+            for src in sup.sources + sup.js_libraries:
                 if not (root / src).is_file():
                     errors.append(f"{where}: Quelle {src} fehlt")
             supports[pid] = sup
@@ -379,6 +401,8 @@ def analyse(cat: Catalog, platform_id: str, required: list[str], optional: list[
             return f"hat keinen Eintrag für Plattform '{platform_id}'"
         if sup.policy == "reject":
             return "wird auf dieser Plattform abgelehnt" + (f": {sup.note}" if sup.note else "")
+        if sup.policy == "planned":
+            return "ist auf dieser Plattform geplant, das Backend fehlt noch" + (f": {sup.note}" if sup.note else "")
         if sup.policy == "external" and not platform.external:
             return "braucht ein externes Backend (noch nicht unterstützt)"
         return None
@@ -489,6 +513,8 @@ def render_features_h(cat: Catalog, sel: Selection) -> str:
     ]
     if sel.platform.freestanding:
         out.append("#define NHAL_PLATFORM_FREESTANDING 1")
+    if sel.platform.allocator:
+        out.append("#define NHAL_HAS_DEFAULT_ALLOCATOR 1")
     out.append("")
     out.append("/* Im Build enthaltene Features (zur Compile-Zeit abfragbar). */")
     for f in sel.order:
@@ -553,6 +579,7 @@ def _cmake_list(items: list[str]) -> str:
 def render_sources_cmake(cat: Catalog, sel: Selection) -> str:
     sources: list[str] = []
     links: list[str] = []
+    js_libs: list[str] = []
     for f in sel.order:
         sup = f.platforms[sel.platform.id]
         for src in sup.sources:
@@ -562,6 +589,10 @@ def render_sources_cmake(cat: Catalog, sel: Selection) -> str:
         for lib in sup.link:
             if lib not in links:
                 links.append(lib)
+        for js in sup.js_libraries:
+            entry = "${NHAL_ROOT}/" + js
+            if entry not in js_libs:
+                js_libs.append(entry)
     inputs = ["${NHAL_ROOT}/" + str(p.relative_to(cat.root)) for p in sorted((cat.root / "catalog").rglob("*.toml"))]
     return "\n".join([
         f"# {HEADER_NOTE}",
@@ -569,6 +600,8 @@ def render_sources_cmake(cat: Catalog, sel: Selection) -> str:
         f"set(NHAL_PLATFORM_FREESTANDING {'ON' if sel.platform.freestanding else 'OFF'})",
         f"set(NHAL_FEATURE_SOURCES {_cmake_list(sources)})",
         f"set(NHAL_FEATURE_LINK_LIBS {_cmake_list(links)})",
+        f"set(NHAL_FEATURE_JS_LIBRARIES {_cmake_list(js_libs)})",
+        f"set(NHAL_ALLOCATOR_SOURCES {_cmake_list(['${NHAL_ROOT}/' + a for a in sel.platform.allocator])})",
         f"set(NHAL_SELECTED_FEATURES {_cmake_list([f.id for f in sel.order])})",
         f"set(NHAL_CATALOG_FILES {_cmake_list(inputs)})",
         "",
@@ -583,8 +616,9 @@ def render_matrix(cat: Catalog) -> str:
         f"> {HEADER_NOTE} Quelle: `catalog/`.",
         "",
         "Legende: **nativ** = eigenes Backend · **emuliert** = Ersatz mit beschriebenen",
-        "Unterschieden · **abgelehnt** = Start/Build bricht mit Grund ab · **extern** =",
-        "Backend außerhalb dieses Repos · *(kursiv)* = geplant (Entwurf) · – = kein Eintrag.",
+        "Unterschieden · **geplant** = vorgesehen, Backend fehlt noch · **abgelehnt** = gibt",
+        "es dort nicht (Build/Start bricht mit Grund ab) · **extern** = Backend außerhalb",
+        "dieses Repos · *(kursiv)* = Feature ist noch ein Entwurf · – = kein Eintrag.",
         "",
         "| Feature | Version | Status | " + " | ".join(cat.platforms[p].name for p in pids) + " |",
         "|---|---|---|" + "---|" * len(pids),

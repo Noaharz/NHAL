@@ -12,8 +12,16 @@ Auswahl auf die jeweilige Plattform.
 - Ein **Cloud-Dienst** nimmt Netzwerk, Storage und Compute und lässt
   Gamepad-Haptik und Fenster weg.
 
-> Status: **Phase 0** – Kern, Katalog, Generator und das erste Feature
-> (`time.monotonic`) laufen. Alles Weitere steht in [docs/roadmap.md](docs/roadmap.md).
+> Status: **Phase 2 für macOS und Web** – Kern, Katalog, Werkzeug und 15 Features:
+> System (`time.monotonic`, `mem.pool`, `mem.frame`, `fs.file`, `fs.async_read`,
+> `thread.scheduler`, `net.socket_udp`, `sys.shell`), Fenster und Eingabe
+> (`window.basic`, `input.state`, `input.actions`, `input.gamepad`), Grafik
+> (`gfx.device` v2 mit Metal und WebGPU – Gruppen, Push-Konstanten, Frames in
+> Flight, MRT, MSAA, Indirect, Abfragen –, `gfx.mesh_shader` mit Metal) und
+> `audio.output`. Auf macOS und im Web ist jedes Feature gebaut und getestet
+> oder mit Grund abgelehnt. [examples/game_input](examples/game_input/main.c)
+> zeigt Fenster, Grafik und Eingabe zusammen. Alles Weitere steht in
+> [docs/roadmap.md](docs/roadmap.md).
 
 ## Grundsätze
 
@@ -58,6 +66,7 @@ Plattformen und Features lassen sich frei kombinieren:
 ./nhal build --xernel --macos --features time.monotonic
 ./nhal build --web --manifest examples/minimal/nhal.toml
 ./nhal build --test                                  # Host-Plattform, alle Features, mit Tests
+./nhal build --web --test --browser                  # Web-Tests zusätzlich in headless Chrome
 ```
 
 `check` zeigt eine Tabelle Feature × Plattform (nativ, emuliert, extern,
@@ -112,7 +121,9 @@ uint64_t t = clock->now_ns();                                          /* Hot Pa
 nhal_shutdown(ctx);
 ```
 
-Ein vollständiges Beispiel liegt unter [examples/minimal](examples/minimal).
+Beispiele: [examples/minimal](examples/minimal) (Start, Fähigkeiten, Uhr) und
+[examples/files_minimal](examples/files_minimal) (Werkzeug ohne Fenster: Ordner
+lesen, asynchron laden, Prüfsummen parallel).
 
 ## Aufbau des Repos
 

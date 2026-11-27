@@ -1,0 +1,30 @@
+id = "gfx.raytracing"
+version = 1
+status = "experimental"
+summary = "Beschleunigungsstrukturen (BLAS/TLAS) und Ray Queries"
+requires = ["gfx.device"]
+
+[platforms.macos]
+policy = "native"
+sources = ["backends/macos/gfx/raytracing.m"]
+link = ["-Wl,-framework,Metal", "-Wl,-framework,Foundation"]
+note = "Metal (MTLAccelerationStructure, Ray Queries in MSL); nhal_init meldet UNAVAILABLE ohne passende GPU"
+
+[platforms.windows]
+policy = "planned"
+note = "DXR (Inline-Raytracing) folgt mit dem D3D12-Backend"
+
+[platforms.linux]
+policy = "planned"
+note = "VK_KHR_acceleration_structure und VK_KHR_ray_query folgen mit dem Vulkan-Backend"
+
+[platforms.xernel]
+policy = "planned"
+note = "braucht zuerst gfx.device auf Xernel"
+
+[platforms.web]
+policy = "reject"
+note = "WebGPU kennt kein Raytracing"
+
+[platforms.console]
+policy = "external"

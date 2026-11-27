@@ -1,0 +1,47 @@
+<!doctype html>
+<!--
+  Läufer für die Web-Tests im Browser: runner.html?test=gfx lädt gfx.js.
+  Ergebnis steht im Titel (OK / FEHLER) und in window.nhalResult.
+  Starten: python3 -m http.server -d build/web/tests  →  http://localhost:8000/runner.html?test=gfx
+-->
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>NHAL-Test</title>
+<style>
+  body { font: 14px/1.4 ui-monospace, monospace; margin: 1.5rem; }
+  canvas { border: 1px solid #888; width: 128px; height: 64px; image-rendering: pixelated; }
+  .ok { color: #070; } .fail { color: #b00; }
+</style>
+</head>
+<body>
+<canvas id="nhal-canvas" width="32" height="16"></canvas>
+<pre id="out"></pre>
+<script>
+var Module;
+(() => {
+  // Eigener Gültigkeitsbereich: Emscripten legt globale Namen wie "out" an.
+  const name = new URLSearchParams(location.search).get("test") || "gfx";
+  const out = document.getElementById("out");
+  window.nhalResult = null;
+  window.nhalLog = [];
+  function put(text, err) {
+    window.nhalLog.push((err ? "[stderr] " : "") + text);
+    out.textContent = window.nhalLog.join("\n");
+    if (/: alles in Ordnung/.test(text)) finish("OK");
+    else if (/Prüfung\(en\) fehlgeschlagen$/.test(text)) finish("FEHLER");
+  }
+  function finish(result) {
+    window.nhalResult = result;
+    document.title = result + " – " + name;
+    out.className = result === "OK" ? "ok" : "fail";
+  }
+  Module = { print: (t) => put(t, false), printErr: (t) => put(t, true) };
+  const s = document.createElement("script");
+  s.src = name + ".js";
+  s.onerror = () => { put("Test " + name + ".js nicht gefunden", true); finish("FEHLER"); };
+  document.body.appendChild(s);
+})();
+</script>
+</body>
+</html>

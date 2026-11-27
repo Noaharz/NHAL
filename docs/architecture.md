@@ -78,6 +78,7 @@ stabil über alle Builds. Kollisionen erkennt `nhalgen check`.
 |---|---|
 | `native` | Eigenes Backend, volle Semantik |
 | `emulated` | Ersatz-Implementierung. Die Unterschiede stehen im Header und in der Notiz des Katalogs, und `nhal_query` meldet `NHAL_SUPPORT_EMULATED` |
+| `planned` | Vorgesehen, das Backend fehlt noch; verhält sich wie `reject`, sagt aber, dass es kommt |
 | `reject` | Gibt es auf dieser Plattform nicht, mit Begründung |
 | `external` | Backend liegt außerhalb dieses Repos (z. B. Konsolen) |
 
@@ -88,18 +89,32 @@ das zur Eigenschaft der Schnittstelle, statt dass NHAL so tut, als wären alle
 Geräte gleich. Beispiele:
 
 - `time.monotonic`: `suspend` sagt, ob die Uhr im Ruhezustand weiterläuft.
-- geplant `gfx.device`: Speicher-Eigenschaften wie `unified`, `host_coherent`
-  und `device_local`. Auf Apple Silicon ist GPU-Speicher direkt für die CPU
-  lesbar, auf PCs mit getrenntem VRAM nur über eine Kopie.
+- `gfx.device`: `info()` meldet `unified_memory` und `persistent_mapping`.
+  Auf Apple Silicon (Metal) teilen sich CPU und GPU den Speicher, und Puffer
+  mit `HOST_VISIBLE` sind dauerhaft über `buffer_mapped()` erreichbar. WebGPU
+  kann das nicht; dort lehnt `buffer_create` `HOST_VISIBLE` mit Grund ab, und
+  Daten gehen über `buffer_write`/`buffer_read`.
+- `gfx.device`: Regeln, die nur eine API verlangt (Ausrichtung auf 256 Bytes
+  bei Uniform-Offsets und Zeilen, Usage-Flags für Kopien), gelten überall
+  (`backends/common/gfx/validate.h`). Was auf macOS läuft, scheitert so nicht
+  erst im Browser.
+- `gfx.device`: `info()` meldet außerdem `blocking_wait` (Metal wartet auf
+  eine Seriennummer, der Browser nicht), `timestamp_queries` mit
+  `timestamp_period` (Ticks in Nanosekunden) und `indirect_first_instance`.
+  Push-Konstanten sind auf Metal echte `setBytes`-Daten; WebGPU hat keine,
+  dort legt NHAL sie in einen Uniform-Ring mit dynamischem Offset. Die App
+  sieht dieselbe Schnittstelle, die Shader-Bindung (Gruppe 3 bzw. Puffer 30)
+  steht im Header.
 
 ## Backends
 
 | Ordner | Plattformen |
 |---|---|
-| `backends/posix/` | macOS, Linux (gemeinsamer POSIX-Code) |
+| `backends/common/` | plattformunabhängig: `mem.*`, Scheduler, Warteschlangen von `fs.async_read`, Heap, Thread-Schicht, gemeinsame Prüfungen für `gfx.*` |
+| `backends/posix/` | macOS, Linux, Web (gemeinsamer POSIX-Code) |
 | `backends/windows/` | Windows |
-| `backends/macos/`, `backends/linux/` | plattformeigener Code (ab Phase 1/2) |
-| `backends/xernel/` | Xernel (eigenes Betriebssystem, vorerst freestanding) |
+| `backends/macos/`, `backends/linux/` | plattformeigener Code (macOS: CoreAudio, GameController, Metal in Objective-C mit ARC) |
+| `backends/xernel/` | Xernel (eigenes Betriebssystem, mit xlibc) |
 | `backends/web/` | Web (Emscripten) |
 | `backends/console_template/` | nur Doku: Konsolen-Backends sind extern |
 
@@ -118,17 +133,19 @@ daraus je einen Build:
 ```
 
 - `--all` steht für alle Plattformen aus `catalog/platforms.toml`.
-- Host-Plattform, Freestanding-Prüfbuild und Web (mit `emcmake`) baut `./nhal`
-  direkt. Für andere Ziele braucht es `--toolchain <plattform>=<datei>`. Ohne
-  Toolchain gibt es einen Fehler mit Grund, keinen stillen Verzicht.
+- Die Host-Plattform, Plattformen mit eigener Toolchain-Datei (Xernel) und
+  Plattformen mit Wrapper (Web: `emcmake`) baut `./nhal` direkt. Für andere
+  Ziele braucht es `--toolchain <plattform>=<datei>`. Ohne Toolchain gibt es
+  einen Fehler mit Grund, keinen stillen Verzicht.
 - Externe Plattformen (Konsolen) werden geprüft, aber nicht gebaut.
 
 ## Xernel
 
 Xernel ist ein eigenständiges Betriebssystem, so wie Linux, und für NHAL eine
-Plattform wie jede andere. Solange es dort keine libc gibt, baut NHAL für Xernel
-freestanding (`-ffreestanding -fno-builtin`, kein Standard-Allocator). Mehr
-dazu in `backends/xernel/README.md`.
+Plattform wie jede andere. NHAL baut gegen die C-Bibliothek von Xernel (xlibc)
+mit einer eigenen Toolchain (`cmake/toolchains/xernel-x86_64.cmake`) und
+linkt echte Xernel-Programme. `./nhal build --xernel --test` startet die Tests
+in QEMU auf Xernel. Was fehlt und warum, steht in `backends/xernel/README.md`.
 
 ## Web
 

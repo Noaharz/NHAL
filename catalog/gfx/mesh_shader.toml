@@ -1,20 +1,26 @@
 id = "gfx.mesh_shader"
 version = 1
-status = "draft"
-summary = "Mesh- und Task-Shader"
+status = "experimental"
+summary = "Mesh- und Object-/Task-Shader"
 requires = ["gfx.device"]
 
 [platforms.macos]
 policy = "native"
+sources = ["backends/macos/gfx/mesh_shader.m"]
+link = ["-Wl,-framework,Metal", "-Wl,-framework,Foundation"]
+note = "Metal 3 (Object- und Mesh-Funktionen); nhal_init meldet UNAVAILABLE ohne passende GPU"
 
 [platforms.windows]
-policy = "native"
+policy = "planned"
+note = "D3D12 Mesh Shader (Amplification/Mesh) folgen mit dem D3D12-Backend"
 
 [platforms.linux]
-policy = "native"
+policy = "planned"
+note = "VK_EXT_mesh_shader folgt mit dem Vulkan-Backend"
 
 [platforms.xernel]
-policy = "native"
+policy = "planned"
+note = "braucht zuerst gfx.device auf Xernel"
 
 [platforms.web]
 policy = "reject"
